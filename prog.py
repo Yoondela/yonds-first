@@ -136,13 +136,11 @@ def do_forward(robot_name, steps):
     :param steps:
     :return: (True, forward output text)
     """
-    print("on silent", on_silent)
-    print("on reverse", on_reverse)
-    print("on reverse silent", on_reverse_silent)
-
-    if on_silent:
+   
+    if on_silent or on_reverse_silent:
         update_position(steps)
         return True
+    
     else:
         if update_position(steps):
             return True, ' > '+robot_name+' moved forward by '+str(steps)+' steps.'
@@ -155,7 +153,7 @@ def do_back(robot_name, steps):
     :param steps:
     :return: (True, forward output text)
     """
-    if on_silent:
+    if on_silent or on_reverse_silent:
         update_position(-steps)
         return True
     else:
@@ -173,7 +171,7 @@ def do_right_turn(robot_name):
     current_direction_index += 1
     if current_direction_index > 3:
         current_direction_index = 0
-    if on_silent:
+    if on_silent or on_reverse_silent:
         return True
     else:
         return True, ' > '+robot_name+' turned right.'
@@ -189,7 +187,7 @@ def do_left_turn(robot_name):
     current_direction_index -= 1
     if current_direction_index < 0:
         current_direction_index = 3
-    if on_silent:
+    if on_silent or on_reverse_silent:
         return True
     else:
         return True, ' > '+robot_name+' turned left.'
@@ -248,28 +246,28 @@ def handle_command(robot_name, command):
             print(command_output)
             show_position(robot_name)
         elif command_name == 'forward':
-            if on_silent:
+            if on_silent or on_reverse_silent:
                 do_next = do_forward(robot_name, int(arg))
             else:
                 (do_next, command_output) = do_forward(robot_name, int(arg))
                 print(command_output)
                 show_position(robot_name)
         elif command_name == 'back':
-            if on_silent:
+            if on_silent or on_reverse_silent:
                 do_next = do_back(robot_name, int(arg))
             else:    
                 (do_next, command_output) = do_back(robot_name, int(arg))
                 print(command_output)
                 show_position(robot_name)
         elif command_name == 'right':
-            if on_silent:
+            if on_silent or on_reverse_silent:
                 do_next = do_right_turn(robot_name)
             else:
                 (do_next, command_output) = do_right_turn(robot_name)
                 print(command_output)
                 show_position(robot_name)
         elif command_name == 'left':
-            if on_silent:
+            if on_silent or on_reverse_silent:
                 do_next = do_left_turn(robot_name)
             else:
                 (do_next, command_output) = do_left_turn(robot_name)
@@ -370,12 +368,10 @@ def robot_start():
         command = get_command(robot_name)
         make_history(command)
         if command == "replay silent":
-            print("turning on silent to true")
             on_silent = True
         elif command == "replay reversed":
             on_reverse = True
         elif command == "replay reversed silent":
-            print("turning on reverse silent to true")
             on_reverse_silent = True
         
 
@@ -386,5 +382,5 @@ if __name__ == "__main__":
     robot_start()
 """
 left at: reversed silent
-making robot understand replay reversed silent
+
 """
