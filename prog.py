@@ -72,9 +72,9 @@ def valid_command(command):
     Returns a boolean indicating if the robot can understand the command or not
     Also checks if there is an argument to the command, and if it a valid int
     """
-
-    if "replay silent" in command and is_int(command.split()[2]):
-        return True
+    if len(command.split()) == 3:
+        if "replay silent" in command and is_int(command.split()[2]):
+            return True
     if "-" in command and len(command) == 10:
         x = command.split()[1].split("-")
         if is_int(x[0]) and is_int(x[1]):
@@ -162,6 +162,7 @@ def do_back(robot_name, steps):
     :param steps:
     :return: (True, forward output text)
     """
+
     if on_silent or on_reverse_silent:
         update_position(-steps)
         return True
@@ -180,7 +181,7 @@ def do_right_turn(robot_name):
     current_direction_index += 1
     if current_direction_index > 3:
         current_direction_index = 0
-    if on_silent or on_reverse_silent:
+    if on_silent or on_reverse_silent or on_replay_range:
         return True
     else:
         return True, ' > '+robot_name+' turned right.'
@@ -196,7 +197,7 @@ def do_left_turn(robot_name):
     current_direction_index -= 1
     if current_direction_index < 0:
         current_direction_index = 3
-    if on_silent or on_reverse_silent:
+    if on_silent or on_reverse_silent or on_replay_range:
         return True
     else:
         return True, ' > '+robot_name+' turned left.'
@@ -234,11 +235,12 @@ def handle_command(robot_name, command):
     :return: `True` if the robot must continue after the command, or else `False` if robot must shutdown
     """
 
-    global on_silent
-    print("in handle command, command is", command)
+    global on_silent, replay_range_helper_on
+
     do_next = True
-    if command in replay_commands or on_replay_range or on_silent_range:
-        print("inside if block in handle command")
+    if command in replay_commands or on_replay_range or\
+    (on_silent_range and replay_range_helper_on):
+        
         if command == "replay":
             replay(robot_name, "", "")
             show_replayed(robot_name)
@@ -262,16 +264,13 @@ def handle_command(robot_name, command):
             replay_reversed_silent(robot_name)
             show_position(robot_name)
 
-        elif on_silent_range and is_int(command.split()[2]):
-            print("we here")
+        elif on_silent_range and replay_range_helper_on:
             n = int(command.split()[2])
-            print("n", n)
-
+            replay_range_helper_on = False
             replay_silent(robot_name, n)
 
     else:
         (command_name, arg) = split_command_input(command)
-        
         if command_name == 'off':
             return False
         elif command_name == 'help':
@@ -293,14 +292,14 @@ def handle_command(robot_name, command):
                 print(command_output)
                 show_position(robot_name)
         elif command_name == 'right':
-            if on_silent or on_reverse_silent:
+            if on_silent or on_reverse_silent or on_replay_range:
                 do_next = do_right_turn(robot_name)
             else:
                 (do_next, command_output) = do_right_turn(robot_name)
                 print(command_output)
                 show_position(robot_name)
         elif command_name == 'left':
-            if on_silent or on_reverse_silent:
+            if on_silent or on_reverse_silent or on_replay_range:
                 do_next = do_left_turn(robot_name)
             else:
                 (do_next, command_output) = do_left_turn(robot_name)
@@ -323,7 +322,6 @@ def make_history(command):
 
 def replay(robot_name, n, m):
     global current_direction_index, replay_count
-    print("inside")
     i = 0
     if is_int(m):
         x = log[int(m)-1:int(n)-1]
@@ -332,11 +330,13 @@ def replay(robot_name, n, m):
             handle_command(robot_name, x.pop(0))            
 
     elif is_int(n) and m == "":
-        print("on replay")
-        x = log[int(n)+1:]
-        print(x)
+        y = len(log) - int(n)
+        replay_count = int(n)
+        x = log[y:]
         while i <= len(x)-1:
             handle_command(robot_name, x.pop(0))
+        show_replayed(robot_name)
+        show_position(robot_name)
 
     elif n == "":
         current_direction_index = 0
@@ -349,30 +349,28 @@ def show_replayed(robot_name):
     elif on_silent:
         print(" > {} replayed {} commands silently.".format(robot_name, replay_count))
     elif on_reverse:
-        print(" > {} replayed {} commands reversed.".format(robot_name, replay_count))
+        print(" > {} replayed {} commands in reverse.".format(robot_name, replay_count))
     elif on_reverse_silent:
-        print(" > {} replayed {} commands reversed silently.".format(robot_name, replay_count))
+        print(" > {} replayed {} commands in reverse silently.".format(robot_name, replay_count))
     else:        
         print(" > {} replayed {} commands.".format(robot_name, replay_count))
 
 def replay_silent(robot_name,n):
-    global current_direction_index, on_silent_range
-    current_direction_index = 0
-    print("inside replay silent :)")
+    global current_direction_index, on_silent_range, on_silent, replay_count
+
     i = 0
     if on_silent_range:
-        # on_silent_range = False
-
-        print("silent range bloc")
-        x = log
-        print("x", x)
-        print(len(x))
-        print("log", log)
-        print("n", n)
+        y = len(log) - int(n)
+        replay_count = int(n)
+        x = log[y:]
+        replay_count = len(x)
+        on_silent = True
         while 0 <= len(x)-1:
-            print("runing handle comand")
             handle_command(robot_name, x.pop(0))
+        show_replayed(robot_name)
+        show_position(robot_name)
     else:
+        current_direction_index = 0
         while i <= len(log)-1:
             command = log.pop(0)
             handle_command(robot_name, command)
@@ -439,25 +437,26 @@ def robot_start():
     while handle_command(robot_name, command):
         command = get_command(robot_name)
         make_history(command)
-        if command == "replay silent":
-            on_silent = True
-        elif command == "replay reversed":
-            on_reverse = True
-        elif command == "replay reversed silent":
-            on_reverse_silent = True
-        elif command.split()[0] == "replay" and is_int(command.split()[1]):
-            print("calling replay")
-            replay(robot_name, command.split()[1], "")
-        elif "-" in command:
-            on_replay_range = True
-            replay_range_helper_on = True
-        elif "replay silent" in command and is_int(command.split()[2]):
-            print("changing things")
-            on_silent_range = True
-            replay_range_helper_on = True
-            print("on silent range", on_silent_range)
-            print("command is", command)
-            print("its length is", len(command))
+        if len(command.split()) == 2:
+            if command == "replay silent":
+                on_silent = True
+            elif command == "replay reversed":
+                on_reverse = True
+
+            elif command.split()[0] == "replay" and is_int(command.split()[1]):
+                replay(robot_name, command.split()[1], "")           
+            elif "-" in command:
+                on_replay_range = True
+                replay_range_helper_on = True
+
+        if len(command.split()) == 3:
+            if command == "replay reversed silent":
+                on_reverse_silent = True
+            elif "replay silent" in command and is_int(command.split()[2]):
+                on_silent_range = True
+                replay_range_helper_on = True
+
+        
         
 
     output(robot_name, "Shutting down..")
