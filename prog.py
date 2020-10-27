@@ -72,14 +72,16 @@ def valid_command(command):
     Returns a boolean indicating if the robot can understand the command or not
     Also checks if there is an argument to the command, and if it a valid int
     """
-    if len(command.split()) == 3:
-        if "replay silent" in command and is_int(command.split()[2]):
+    if len(command.split()) == 3 and is_int(command.split()[1]):
+        return True
+    if len(command.lower().split()) == 3:
+        if "replay silent" in command.lower() and is_int(command.split()[2]):
             return True
     if "-" in command and len(command) == 10:
         x = command.split()[1].split("-")
         if is_int(x[0]) and is_int(x[1]):
             return True
-    if command in replay_commands:
+    if command.lower() in replay_commands:
         return True
     else:
         (command_name, arg1) = split_command_input(command)
@@ -391,9 +393,9 @@ def valid_range(int_lst):
     if int(int_lst[0]) > int(int_lst[1]):
         return True
     else:
-        print("""first number must be bigger than the second number in range
-        eg 'replay 5-2'""")
-        return False
+        print("first number must be bigger than the second number in range\
+ eg 'replay 5-2'")
+        return True
 
 def replay_reversed_silent(robot_name):
     global current_direction_index
@@ -411,54 +413,72 @@ def is_int(s):
     except ValueError:
         return False
 
+def rearange_command(command):
+    x = command.split()
+    new_x = []
+    new_x.append(x[0])
+    new_x.append(x[2])
+    new_x.append(x[1])
+    new_command = " ".join(new_x)
+    return new_command
+
 def robot_start():
     """This is the entry point for starting my robot"""
     global position_x, position_y, current_direction_index, on_silent
     global on_reverse, on_reverse_silent, on_replay_range
-    global replay_range_helper_on, on_silent_range
-    # on_silent = False
-    robot_name = get_robot_name()
-    output(robot_name, "Hello kiddo!")
-   
+    global replay_range_helper_on, on_silent_range,log, replay_count
+    log = []
+    replay_count = 0
     position_x = 0
     position_y = 0
     current_direction_index = 0
+    on_silent = False
+    on_reverse = False
+    on_reverse_silent = False
+    on_replay_range = False
+    replay_range_helper_on = False
+    on_silent_range = False
+
+    robot_name = get_robot_name()
+    output(robot_name, "Hello kiddo!")
+
    
     command = get_command(robot_name)
 
-    if command == "replay silent":
+    if command.lower() == "replay silent":
         on_silent = True
-    elif command == "replay reversed":
+    elif command.lower() == "replay reversed":
         on_reverse = True
-    elif command == "replay reversed silent":
+    elif command.lower() == "replay reversed silent":
         on_reverse_silent = True
     
     make_history(command)
     while handle_command(robot_name, command):
         command = get_command(robot_name)
         make_history(command)
+        if len(command.split()) == 3 and is_int(command.split()[1]):
+            command = rearange_command(command)
         if len(command.split()) == 2:
-            if command == "replay silent":
+            if command.lower() == "replay silent":
                 on_silent = True
-            elif command == "replay reversed":
+            elif command.lower() == "replay reversed":
                 on_reverse = True
 
-            elif command.split()[0] == "replay" and is_int(command.split()[1]):
+            elif command.lower().split()[0] == "replay" and is_int(command.split()[1]):
                 replay(robot_name, command.split()[1], "")           
             elif "-" in command:
                 on_replay_range = True
                 replay_range_helper_on = True
 
         if len(command.split()) == 3:
-            if command == "replay reversed silent":
+            if command.lower() == "replay reversed silent":
                 on_reverse_silent = True
-            elif "replay silent" in command and is_int(command.split()[2]):
+            if "replay silent" in command.lower() and is_int(command.split()[2]):
                 on_silent_range = True
                 replay_range_helper_on = True
 
         
         
-
     output(robot_name, "Shutting down..")
 
 
