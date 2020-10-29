@@ -1,0 +1,40 @@
+
+def find_min(element):
+    if len(element) == 0:
+        return -1
+    # for i in element:
+    #     if type(i) != int:
+    #         return -1
+    if len(element) == 1:
+        return element[0]
+    elif element[0] < element[1:]:
+        return element[0]
+    else:
+        return find_min(element[1:])
+
+
+
+def sum_all(element):
+    if len(element) == 1:
+        return element[0]
+    else:
+        return int(element[0]) + int(sum_all(element[1:]))
+
+
+def find_possible_strings(character_set, n):
+    out = []
+    if n == 0:
+        return []
+    if n == 1:
+        return character_set
+    else:
+        for i, let in enumerate(character_set):
+            for perm in find_possible_strings(character_set[:1]+character_set[i+1:], n-1):
+                out += [let + perm]
+    return out
+
+print(sum_all(["2","3","5","4"]))
+print(find_possible_strings(["a","b"],2))
+# print(find_min(["22","4","53"]))
+
+
