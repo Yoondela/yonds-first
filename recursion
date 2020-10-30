@@ -1,0 +1,37 @@
+def find_min(lst):
+    for i in lst:
+       if isinstance(i, int):
+           return -1
+
+    if len(lst) == 0:
+        return -1
+
+    if len(lst) == 1:
+        return lst[0]
+    
+    else:
+        min_number = find_min(lst[1:])
+        min = lst[0]
+        if min_number < min:
+            min = min_number
+        return min
+
+lst = "32571985"
+print(find_min(lst))
+
+def find_possible_strings(character_set, n):
+    size = len(character_set)
+    for i in character_set:
+        if type(i) != str:
+            return []
+    
+    if n == 1:
+        return character_set
+    else:
+        begin = []
+        for i in character_set:
+            for j in find_possible_strings(character_set, n-1):
+                begin += [i + j]
+        return begin
+
+    print(find_possible_strings(["ab"], 2))
